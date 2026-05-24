@@ -2,3 +2,4 @@ explain.txt
 translations.db
 app_monitor.log
 .dockerignore
+README.md
