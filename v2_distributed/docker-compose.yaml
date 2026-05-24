@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # 1. The Broker
+  redis:
+    image: redis:7-alpine
+    container_name: translation_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  # 2. The FastAPI Web Application Server
+  web:
+    build: .
+    container_name: translation_api
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - db_data:/app/db_folder
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+  # 3. The Celery Execution Worker Process
+  worker:
+    build: .
+    container_name: translation_worker
+    command: celery -A celery_app worker --loglevel=info -P threads
+    volumes:
+      - db_data:/app/db_folder
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+
+# Structural storage volumes 
+volumes:
+  redis_data:
+  db_data:      
